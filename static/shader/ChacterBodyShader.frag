@@ -1,25 +1,11 @@
 
-
-
 uniform mat4 modelMatrix;
-
-
 uniform vec3 color;
 uniform vec3 lightPosition;
-
 uniform vec3 _mainColor;
 uniform sampler2D _mainTex;
 uniform sampler2D _normalTex;
 uniform vec2 tilling;
-
-uniform sampler2D _aoTex;
-uniform float _aoAdjust;
-
-uniform samplerCube _cubeMapTex;
-uniform float _cubeMapinit;
-uniform vec4 _cubeMapTex_HDR;
-
-uniform sampler2D _roughnessMap;
 uniform  float _roughness;
 uniform  float _roughnessContrast;
 uniform  float _roughnessInit;
@@ -93,13 +79,10 @@ void main()
     float NdotV=dot(nDir,vDir);
     float NdotL=dot(nDir,lDir);
     //贴图操作
-    vec4 aoTex=texture2D(_aoTex,vUv);
-    vec4 a1=vec4(1,1,1,1);
-    vec4 adjusts=vec4(_aoAdjust,_aoAdjust,_aoAdjust,_aoAdjust);
-    aoTex=lerp(a1,aoTex,adjusts);
+ 
     
     vec3 mainTex=texture2D(_mainTex,vUv).xyz;
-    vec3 roughnessTex=texture2D(_roughnessMap,vUv).xyz;
+    vec3 roughnessTex=vec3(1.0,1.0,1.0);
     vec3 _roughnessContrasts=vec3(_roughnessContrast,_roughnessContrast,_roughnessContrast);
     
     //粗糙度
@@ -110,13 +93,10 @@ void main()
     
     //漫反射模型(兰伯特)
     vec3 lambert=vec3(max(0.0,NdotL),max(0.0,NdotL),max(0.0,NdotL));
-    //环境光
-    vec4 cubeMapTex=textureCube(_cubeMapTex,rvDir,finalRoughness);
-    vec3 env_color=cubeMapTex.xyz;
-    env_color=env_color*_cubeMapinit;
+  
     
     //最终颜色
-    vec3 finalColor=(lambert*aoTex.xyz*_mainColor);
+    vec3 finalColor=(lambert.xyz*_mainColor);
     vec3 finalColor_liner=pow(finalColor,vec3(2.2,2.2,2.2));
     finalColor=ACETompping(finalColor_liner);
     vec3 finalColor_gamma=pow(finalColor,vec3(1./2.2,1./2.2,1./2.2));
