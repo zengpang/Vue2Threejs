@@ -18,12 +18,16 @@ import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 const $ = s => document.querySelector(s);
 //展示模型
 let showModel = null;
+let showModelBone = null;
 //摄像头
 let camera = null;
 //场景
 let scene = null;
 //动画
-let animationMixer = null;
+let animationMixers = [];
+let clock = new THREE.Clock();
+//动画文件路径
+let animationPath = 'static/model/Naria@idie.FBX';
 //灯光
 let light = null;
 //渲染器
@@ -61,11 +65,11 @@ export default {
         initMat() {
             fragShaderStr = this.load(shaderPath + `.frag`);
             vertexShaderStr = this.load(shaderPath + `.vert`);
-          
+
             modelMat = new THREE.ShaderMaterial({
                 uniforms: {
                     _mainColor: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
-                    lightPosition: { value: new THREE.Vector3(0, -110, 1.25) },
+                    lightPosition: { value: new THREE.Vector3(0, -110, 0) },
                     tilling: { value: new THREE.Vector2(1, 1) },
                     _normalTex: { value: new THREE.TextureLoader().load("static/texture/Naria/Naria_N.tga") },
                     _roughness: { value: 1.0 },
@@ -76,7 +80,9 @@ export default {
                 },
                 //236,65,65
                 vertexShader: vertexShaderStr,
-                fragmentShader:fragShaderStr
+                fragmentShader: fragShaderStr,
+              
+
             });
         },
 
@@ -88,44 +94,59 @@ export default {
         //初始化摄像头
         initCamera() {
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-             // -9.552919786820297, y: 145.26258822288335, z: -172.63834236384167
-            camera.position.set( 0, 0, -200);
+            // -9.552919786820297, y: 145.26258822288335, z: -172.63834236384167
+            camera.position.set(0, 0, -200);
             console.log(camera);
-           
-             camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+            camera.lookAt(new THREE.Vector3(0, 0, 0));
         },
         //初始化灯光
         initLight() {
             scene.add(new THREE.AmbientLight(0x444444));
             light = new THREE.PointLight(0xffffff);
-           // light.position.set(0, 1.25, 1.25);
-            light.position.set(0, -110, 1.25);
+            // light.position.set(0, 1.25, 1.25);
+            light.position.set(0, -110, 20);
             //告诉点光需要开启阴影投射
             light.castShadow = true;
             scene.add(light);
+            let Ambient = new THREE.AmbientLight(0x404040, 2);
+            scene.add(Ambient);
         },
         //模型初始化
         initModelFbx() {
             console.log('模型加载');
-        
+
             let loader = new FBXLoader();
-            console.log(modelPath);
+       
             loader.load(modelPath, function (object) {
                 //创建纹理
                 var mat = modelMat;
-                
-                let geometry = object.children[1].geometry;
-               
-                showModel = new THREE.Mesh(geometry, mat);;
-                showModel.rotation.x = -0.5 * Math.PI; //将模型摆正
-                showModel.rotation.z = -1 * Math.PI; //将模型摆正
-                showModel.position.set(0,-100,0)
-                showModel.scale.set(1, 1, 1); //缩放
+
+          
+                console.log(object);
+
+ 
+             
+                showModel = object;
+            
+                showModel.position.set(0, 0, 0);
+          
+            
+          
                 // geometry.center(); //居中显示
-        
+                showModel.children[1].material=modelMat;
+                let fragStr=THREE.ShaderLib["lambert"].fragmentShader;
+                let VertStr=THREE.ShaderLib["basic"].vertexShader;
+                console.log(fragStr);
+                // showModel.children[1].material=mat;
+                 //添加骨骼辅助
+           let meshHelper = new THREE.SkeletonHelper(showModel);
+            scene.add(meshHelper);
                 scene.add(showModel);
-                console.log(showModel.position);
+                console.log( showModel);
+                console.log( showModel.children[1]);
             });
+            
         },
         //渲染器初始化
         initRender() {
@@ -160,13 +181,29 @@ export default {
         },
         //模型动画初始化
         initModelAnim() {
+            console.log('动画加载');
 
+            let loader = new FBXLoader();
+
+            loader.load(animationPath, function (object) {
+
+                //创建纹理
+                let mixer = new THREE.AnimationMixer(showModel);
+                animationMixers.push(mixer);
+                showModel.animations.push(object.animations[0]);
+                 object.scale.set(0.4000000059604645, 0.4000000059604645, 0.4000000059604645);
+                let action = mixer.clipAction(showModel.animations[0]);
+                action.play();
+             
+                console.log(showModel);
+
+            });
         },
-       
+
         render() {
             render.render(scene, camera);
-          
-             
+
+
         },
 
         //窗口变动触发的函数
@@ -179,28 +216,39 @@ export default {
 
         animate() {
             //更新
+            requestAnimationFrame(this.animate);
+            if (animationMixers.length > 0) {
+
+
+             
+                animationMixers[0].update(clock.getDelta());
+                
+ 
+
+            }
+
             this.render();
 
-            requestAnimationFrame(this.animate);
+
         },
         //绘制
         draw() {
             this.initScene();
             this.initMat();
-         
+
             this.initCamera();
             this.initRender();
             this.initLight();
             this.initModelFbx();
             this.initControls();
-           
+            this.initModelAnim();
             this.animate();
             window.onresize = this.onWindowResize;
         }
 
     },
     mounted() {
-      this.draw();
+        this.draw();
     }
 }
 </script>
