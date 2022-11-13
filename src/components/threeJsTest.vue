@@ -69,7 +69,7 @@ export default {
             modelMat = new THREE.ShaderMaterial({
                 uniforms: {
                     _mainColor: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
-                    lightPosition: { value: new THREE.Vector3(0, -110, 0) },
+                    lightPosition: { value: new THREE.Vector3(0, -10, 0) },
                     tilling: { value: new THREE.Vector2(1, 1) },
                     _normalTex: { value: new THREE.TextureLoader().load("static/texture/Naria/Naria_N.tga") },
                     _roughness: { value: 1.0 },
@@ -81,7 +81,7 @@ export default {
                 //236,65,65
                 vertexShader: vertexShaderStr,
                 fragmentShader: fragShaderStr,
-              
+
 
             });
         },
@@ -94,8 +94,8 @@ export default {
         //初始化摄像头
         initCamera() {
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            // -9.552919786820297, y: 145.26258822288335, z: -172.63834236384167
-            camera.position.set(0, 0, -200);
+            // -7.951022465039643, y: 50.66599857875026, z: 84.02389415272548
+            camera.position.set(-7.951022465039643, 50.66599857875026, 84.02389415272548);
             console.log(camera);
 
             camera.lookAt(new THREE.Vector3(0, 0, 0));
@@ -117,36 +117,30 @@ export default {
             console.log('模型加载');
 
             let loader = new FBXLoader();
-       
+
             loader.load(modelPath, function (object) {
                 //创建纹理
                 var mat = modelMat;
-
-          
                 console.log(object);
-
- 
-             
                 showModel = object;
-            
-                showModel.position.set(0, 0, 0);
-          
-            
-          
+                showModel.position.set(0, -30, 0);
                 // geometry.center(); //居中显示
-                showModel.children[1].material=modelMat;
-                let fragStr=THREE.ShaderLib["lambert"].fragmentShader;
+                showModel.children[1].material =  mat;
+                //获取原生shader代码
+                let fragStr=THREE.ShaderLib["basic"].fragmentShader;
                 let VertStr=THREE.ShaderLib["basic"].vertexShader;
                 console.log(fragStr);
+                console.log(VertStr);
                 // showModel.children[1].material=mat;
-                 //添加骨骼辅助
-           let meshHelper = new THREE.SkeletonHelper(showModel);
-            scene.add(meshHelper);
+                
+                //添加骨骼辅助
+                // let meshHelper = new THREE.SkeletonHelper(showModel);
+                // scene.add(meshHelper);
                 scene.add(showModel);
-                console.log( showModel);
-                console.log( showModel.children[1]);
+                console.log(showModel);
+                console.log(showModel.children[1]);
             });
-            
+
         },
         //渲染器初始化
         initRender() {
@@ -179,7 +173,7 @@ export default {
             //是否开启右键拖拽
             controls.enablePan = true;
         },
-        //模型动画初始化
+        //载入模型动画
         initModelAnim() {
             console.log('动画加载');
 
@@ -187,15 +181,18 @@ export default {
 
             loader.load(animationPath, function (object) {
 
-                //创建纹理
+                //创建动画混合器，并指定模型，混合器会自动根据指定模型寻找骨骼，并绑定
                 let mixer = new THREE.AnimationMixer(showModel);
+                //添加至动画混合器数组
                 animationMixers.push(mixer);
+                //挂载动画
                 showModel.animations.push(object.animations[0]);
-                 object.scale.set(0.4000000059604645, 0.4000000059604645, 0.4000000059604645);
+                //获取动画片
                 let action = mixer.clipAction(showModel.animations[0]);
+                //播放动画片
                 action.play();
-             
-                console.log(showModel);
+
+               
 
             });
         },
@@ -217,16 +214,17 @@ export default {
         animate() {
             //更新
             requestAnimationFrame(this.animate);
+            
             if (animationMixers.length > 0) {
 
 
-             
+                //遍历并更新所有动画混合器
                 animationMixers[0].update(clock.getDelta());
-                
- 
+
+
 
             }
-
+           
             this.render();
 
 
